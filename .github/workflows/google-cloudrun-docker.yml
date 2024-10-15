@@ -1,74 +1,72 @@
-name: Build app and create a release in Cloud Deploy
+name: Build and Deploy to Google Cloud Deploy
 
+# Trigger the workflow when a push occurs on the default branch
 on:
   push:
     branches:
-      - $default_branch
+      - main  # Adjust this based on your default branch
 
 env:
-  PROJECT_ID: small-apps-433901 # Google Cloud project ID
-  GAR_LOCATION: us-west1 # Artifact Registry location
-  REGION: us-west1 # Cloud Run service region
+  PROJECT_ID: small-apps-433901  # Google Cloud project id
+  GAR_LOCATION: us-west1  # Artifact Registry location
+  REGION: us-west1  # Cloud Run service region
   APP: quick-deploy
 
 jobs:
   deploy:
-    # Add 'id-token' with the intended permissions for workload identity federation
     permissions:
       contents: 'read'
       id-token: 'write'
 
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Checkout the repository
       - name: 'Checkout'
         uses: 'actions/checkout@v3'
 
+      # Step 2: Google Auth using Workload Identity Federation
       - name: 'Google auth'
         id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # Workload Identity Provider from GitHub Secret
-          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}' # Service account from GitHub Secret
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'  # Ensure this is in your repo secrets
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'  # Ensure this is in your repo secrets
 
+      # Step 3: Set up Google Cloud SDK
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
         with:
           project_id: '${{ env.PROJECT_ID }}'
 
+      # Step 4: Authenticate Docker for Google Artifact Registry
       - name: 'Docker auth'
         run: |-
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
 
+      # Step 5: Build and push the Docker container to Artifact Registry
       - name: 'Build and push container'
         run: |-
           docker build -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.APP }}/${{ env.APP }}:${{ github.sha }}" ./app
           docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.APP }}/${{ env.APP }}:${{ github.sha }}"
 
-      - name: 'Render templatised config manifests'
-        run: |-
-          export PROJECT_ID="${{ env.PROJECT_ID }}"
-          export REGION="${{ env.REGION }}"
-          for template in $(ls config/*.template.yaml); do envsubst < ${template} > ${template%%.*}.yaml ; done
-
-      - name: 'Create Cloud Deploy delivery pipeline'
-        run: |-
-          gcloud deploy apply --file config/clouddeploy.yaml --region ${{ env.GAR_LOCATION }}
-
+      # Step 6: Create a Cloud Deploy release
       - name: 'Create release name'
         run: |-
           echo "RELEASE_NAME=${{ env.APP }}-${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}" >> ${GITHUB_ENV}
 
+      # Step 7: Use Google Cloud Deploy to create the release
       - name: 'Create Cloud Deploy release'
-        id: 'release'
         uses: 'google-github-actions/create-cloud-deploy-release@v0'
         with:
           delivery_pipeline: '${{ env.APP }}'
           name: '${{ env.RELEASE_NAME }}'
           region: '${{ env.REGION }}'
-          description: '${{ env.GITHUB_COMMIT_MSG }}'
-          skaffold_file: 'config/skaffold.yaml'
+          description: '${{ github.event.head_commit.message }}'
+          skaffold_file: 'config/skaffold.yaml'  # Path to your skaffold.yaml
           images: 'app=${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.APP }}/${{ env.APP }}:${{ github.sha }}'
 
+      # Step 8: Report the release details
       - name: 'Report Cloud Deploy release'
         run: |-
           echo "Created release ${{ steps.release.outputs.name }} "
