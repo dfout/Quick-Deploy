@@ -47,7 +47,8 @@ jobs:
           region: '${{ env.REGION }}'
           image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}'
 
-      # Show Cloud Run URL
+      # Show Cloud Run URL / re-run
       - name: 'Show output'
         run: |
           echo ${{ steps.deploy.outputs.url }}
+
