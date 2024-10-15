@@ -32,7 +32,7 @@ name: 'Build and Deploy to Cloud Run'
 on:
   push:
     branches:
-      - '"main"'
+      - "main"
 
 env:
   PROJECT_ID: 'small-apps-433901' # TODO: update to your Google Cloud project ID
@@ -93,4 +93,8 @@ jobs:
         run: |2-
 
           echo ${{ steps.deploy.outputs.url }}
+
+
+
+
 
