@@ -3,9 +3,16 @@ on:
   push:
     branches:
       - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: 'small-apps-433901'
+      APP: 'QuickDeploy'
+      GAR_LOCATION: 'us-west1'  # Change to 'us-west2' if needed
+      REGION: 'us-west1'        # Change to 'us-west2' if needed
 
     steps:
       - name: 'Checkout'
@@ -42,6 +49,6 @@ jobs:
           delivery_pipeline: '${{ env.APP }}'
           name: '${{ env.RELEASE_NAME }}'
           region: '${{ env.REGION }}'
-          description: '${{ env.GITHUB_COMMIT_MSG }}'
+          description: '${{ github.event.head_commit.message }}'
           skaffold_file: 'config/skaffold.yaml'
           images: 'app=${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.APP }}/${{ env.APP }}:${{ github.sha }}'
