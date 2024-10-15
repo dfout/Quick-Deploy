@@ -9,7 +9,6 @@ env:
   PROJECT_ID: 'small-apps-433901'
   REGION: 'us-west1'
   SERVICE: 'quick-deploy'
-  WORKLOAD_IDENTITY_PROVIDER: 'projects/250555830433/locations/global/workloadIdentityPools/github/providers/my-repo'
 
 jobs:
   deploy:
@@ -17,25 +16,23 @@ jobs:
 
     permissions:
       contents: 'read'
-      id-token: 'write'
 
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@v4'
 
-      # Authenticate to Google Cloud using Workload Identity Federation
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
+      # Authenticate using Service Account Key JSON
+      - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
+          credentials_json: '${{ secrets.quick_deploy }}'  # Updated to use 'quick_deploy' secret
 
       # Docker authentication and image build
       - name: 'Docker Auth'
         uses: 'docker/login-action@v3'
         with:
           username: 'oauth2accesstoken'
-          password: '${{ steps.auth.outputs.access_token }}'  # Correct access token reference
+          password: '${{ steps.auth.outputs.access_token }}'
           registry: '${{ env.REGION }}-docker.pkg.dev'
 
       - name: 'Build and Push Container'
@@ -55,4 +52,3 @@ jobs:
       - name: 'Show output'
         run: |
           echo ${{ steps.deploy.outputs.url }}
-
