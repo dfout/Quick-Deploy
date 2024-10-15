@@ -38,7 +38,7 @@ env:
   PROJECT_ID: 'small-apps-433901' # TODO: update to your Google Cloud project ID
   REGION: 'us-west1' # TODO: update to your region
   SERVICE: 'my-service' # TODO: update to your service name
-  WORKLOAD_IDENTITY_PROVIDER: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider' # TODO: update to your workload identity provider
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/250555830433/locations/global/workloadIdentityPools/github/providers/my-repo'
 
 jobs:
   deploy:
@@ -93,3 +93,4 @@ jobs:
         run: |2-
 
           echo ${{ steps.deploy.outputs.url }}
+
