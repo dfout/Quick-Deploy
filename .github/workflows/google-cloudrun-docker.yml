@@ -49,3 +49,6 @@ jobs:
       - name: 'Show output'
         run: |
           echo ${{ steps.deploy.outputs.url }}
+
+
+#installed cloud run admin api
