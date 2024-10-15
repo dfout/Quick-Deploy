@@ -20,11 +20,12 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@v4'
-
+      
       - name: 'Authenticate to Google Cloud'
         run: |
-          echo "${{ secrets.quick_deploy }}" > ${{ github.workspace }}/key.json
+          printf "%s" "${{ secrets.quick_deploy }}" > ${{ github.workspace }}/key.json
           gcloud --quiet auth activate-service-account --key-file="${{ github.workspace }}/key.json"
+      
       
 
       # Configure Docker to use gcloud for authentication to Google Artifact Registry
