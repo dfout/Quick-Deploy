@@ -25,16 +25,15 @@ jobs:
       - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.quick_deploy }}'  # Updated to use 'quick_deploy' secret
+          credentials_json: '${{ secrets.quick_deploy }}'  # Using the quick_deploy secret for Service Account JSON
 
-      # Docker authentication and image build
-      - name: 'Docker Auth'
-        uses: 'docker/login-action@v3'
-        with:
-          username: 'oauth2accesstoken'
-          password: '${{ steps.auth.outputs.access_token }}'
-          registry: '${{ env.REGION }}-docker.pkg.dev'
+      # Configure Docker to use gcloud for authentication to Google Artifact Registry
+      - name: 'Set up Google Cloud authentication for Docker'
+        run: |
+          gcloud --quiet auth activate-service-account --key-file="${{ secrets.quick_deploy }}"
+          gcloud --quiet auth configure-docker ${REGION}-docker.pkg.dev
 
+      # Build and Push Container
       - name: 'Build and Push Container'
         run: |-
           DOCKER_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
